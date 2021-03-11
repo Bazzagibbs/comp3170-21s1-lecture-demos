@@ -1,185 +1,159 @@
+import com.jogamp.opengl.*;
+import com.jogamp.opengl.awt.GLCanvas;
+import comp3170.*;
+import org.joml.Matrix3f;
 
-package comp3170.demos.week2;
-
-import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
-import static com.jogamp.opengl.GL.GL_TRIANGLES;
-
+import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-
-import javax.swing.JFrame;
-
-import com.jogamp.opengl.GL;
-import com.jogamp.opengl.GL4;
-import com.jogamp.opengl.GLAutoDrawable;
-import com.jogamp.opengl.GLCapabilities;
-import com.jogamp.opengl.GLContext;
-import com.jogamp.opengl.GLEventListener;
-import com.jogamp.opengl.GLProfile;
-import com.jogamp.opengl.awt.GLCanvas;
-
-import comp3170.GLException;
-import comp3170.Shader;
+import java.util.Random;
 
 public class Week2 extends JFrame implements GLEventListener {
+    final private File DIRECTORY = new File("src");
+    final private String VERTEX_SHADER = "vertex.glsl";
+    final private String FRAGMENT_SHADER = "fragment.glsl";
 
-	public double TAU = 2 * Math.PI;		// https://tauday.com/tau-manifesto
-	
-	private int width = 800;
-	private int height = 800;
-
-	private GLCanvas canvas;
-	private Shader shader;
-	
-	final private File DIRECTORY = new File("src/comp3170/demos/week2"); 
-	final private String VERTEX_SHADER = "colour_vertex.glsl";
-	final private String FRAGMENT_SHADER = "colour_fragment.glsl";
-
-	private float[] vertices;
-	private int vertexBuffer;
-	private float[] colours;
-	private int colourBuffer;
-
-	private int[] indices;
-
-	private int indexBuffer;
-
-	public Week2() {
-		super("Week 2 example");
-
-		// set up a GL canvas
-		GLProfile profile = GLProfile.get(GLProfile.GL4);		 
-		GLCapabilities capabilities = new GLCapabilities(profile);
-		this.canvas = new GLCanvas(capabilities);
-		this.canvas.addGLEventListener(this);
-		this.add(canvas);
-		
-		// set up the JFrame
-		
-		this.setSize(width,height);
-		this.setVisible(true);
-		this.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				System.exit(0);
-			}
-		});	
-		
-	}
-
-	@Override
-	public void init(GLAutoDrawable arg0) {
-		GL4 gl = (GL4) GLContext.getCurrentGL();
-		
-		// set the background colour to white
-		gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		
-		// Compile the shader
-		try {
-			File vertexShader = new File(DIRECTORY, VERTEX_SHADER);
-			File fragementShader = new File(DIRECTORY, FRAGMENT_SHADER);
-			this.shader = new Shader(vertexShader, fragementShader);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		} catch (GLException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		// calculate the vertices of a hexagon as (x,y) pairs
-
-		this.vertices = new float[7 * 2];
-		
-		// the centre
-
-		int n = 0;
-		vertices[n++] = 0;	// x
-		vertices[n++] = 0;	// y
-		
-		// the outer ring
-		
-		float radius = 0.8f;
-		
-		for (int i = 1; i <= 6; i++) {
-			double angle = i * TAU / 6;
-			vertices[n++] = (float) (radius * Math.cos(angle));	// x 
-			vertices[n++] = (float) (radius * Math.sin(angle)); // y
-		}
-				
-		// copy the data into a Vertex Buffer Object in graphics memory		
-	    this.vertexBuffer = this.shader.createBuffer(vertices, GL4.GL_FLOAT_VEC2);
-
-		this.colours = new float[] {
-				 1.0f, 1.0f, 1.0f,  // WHITE
-				 1.0f, 0.0f, 0.0f,  // RED
-				 1.0f, 1.0f, 0.0f,  // YELLOW
-				 0.0f, 1.0f, 0.0f,  // GREEN
-				 0.0f, 1.0f, 1.0f,  // CYAN
-				 0.0f, 0.0f, 1.0f,  // BLUE
-				 1.0f, 0.0f, 1.0f,  // MAGENTA
-		};
-
-		// copy the data into a Vertex Buffer Object in graphics memory		
-	    this.colourBuffer = this.shader.createBuffer(colours, GL4.GL_FLOAT_VEC3);
-	    
-	    this.indices = new int[] {
-	    	0, 1, 2,
-	    	0, 2, 3,
-	    	0, 3, 4,
-	    	0, 4, 5,
-	    	0, 5, 6,
-	    	0, 6, 1,	    		
-	    };
-	    
-	    this.indexBuffer = this.shader.createIndexBuffer(indices);
-	    		 
-	    
-	}
-
-	@Override
-	public void display(GLAutoDrawable arg0) {
-		GL4 gl = (GL4) GLContext.getCurrentGL();
-
-        // clear the colour buffer
-		gl.glClear(GL_COLOR_BUFFER_BIT);		
-
-		// activate the shader
-		this.shader.enable();
-		
-        // connect the vertex buffer to the a_position attribute		   
-	    this.shader.setAttribute("a_position", vertexBuffer);
-	    this.shader.setAttribute("a_colour", colourBuffer);
-
-	    // write the colour value into the u_colour uniform 
-//	    float[] colour = {1.0f, 0.0f, 1.0f};	    
-//      this.shader.setUniform("u_colour", colour);	    
-	    
-        // draw the shape as a series of lines in a loop
-//        gl.glDrawArrays(GL_TRIANGLES, 0, vertices.length / 2);           	
-
-	    gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-	    gl.glDrawElements(GL_TRIANGLES, indices.length, GL.GL_UNSIGNED_INT, 0);
-	}
-
-	@Override
-	public void reshape(GLAutoDrawable arg0, int arg1, int arg2, int arg3, int arg4) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void dispose(GLAutoDrawable arg0) {
-		// TODO Auto-generated method stub
-		
-	}
+    private int width = 800;
+    private int height = 800;
+    private GLCanvas canvas;
+    private Shader shader;
+    private int vertexBuffer, indexBuffer, indexCount;
+    private int colorBuffer;
 
 
-	
-	public static void main(String[] args) { 
-		new Week2();
-	}
+    public Week2(){
+        super("Week2 demo");
+
+        // init OpenGL
+        GLProfile profile = GLProfile.get(GLProfile.GL4);
+        GLCapabilities caps = new GLCapabilities(profile);
+        canvas = new GLCanvas(caps);
+        canvas.addGLEventListener(this);
+        add(canvas);
+
+        // init JFrame
+        setSize(width, height);
+        setVisible(true);
+        addWindowListener(new WindowAdapter() {
+             public void windowClosing(WindowEvent e){
+                 System.exit(0);
+             }
+        });
+    }
+
+    public static void main(String[] args){
+        new Week2();
+    }
+
+    @Override
+    public void init(GLAutoDrawable drawable) {
+        GL4 gl = (GL4) GLContext.getCurrentGL();
+        gl.glClearColor(0, 0, 0, 1);
+        try{
+            File vertexShader = new File(DIRECTORY, VERTEX_SHADER);
+            File fragmentShader = new File(DIRECTORY, FRAGMENT_SHADER);
+            shader = new Shader(vertexShader, fragmentShader);
+        }
+        catch (IOException | comp3170.GLException e ){
+            e.printStackTrace();
+            System.exit(1);
+        }
+        // Outline
+        // Inside top
+        // Inside bottom
+        float[] vertices = {
+                // Outline
+                -0.4f, 0.6f,
+                0.2f, 0.6f,
+                0.4f, 0.4f,
+                0.4f, 0.2f,
+                0.2f, 0f,
+                0.4f, -0.2f,
+                0.4f, -0.4f,
+                0.2f, -0.6f,
+                - 0.4f, -0.6f,
+
+                // Inside top
+                -0.2f, 0.4f,
+                0f, 0.4f,
+                0.1f, 0.3f,
+                0f, 0.2f,
+                -0.2f, 0.2f,
+
+                // Inside bottom
+                -0.2f, -0.2f,
+                0f, -0.2f,
+                0.1f, -0.3f,
+                0f, -0.4f,
+                -0.2f, -0.4f,
+        };
+        System.out.println("Vertex buffer length: " + vertices.length);
+        vertexBuffer = shader.createBuffer(vertices, gl.GL_FLOAT_VEC2);
+
+        int[] indices = new int[]{
+                0, 1, 9,
+                1, 9, 10,
+                1, 10, 11,
+                1, 2, 11,
+                2, 11, 12,
+                2, 3, 12,
+                3, 4, 12,
+                4, 12, 15,
+                4, 5, 15,
+                5, 6, 15,
+                6, 15, 16,
+                6, 7, 16,
+                7, 16, 17,
+                7, 17, 18,
+                7, 8, 18,
+                12, 14, 15,
+                12, 13, 14,
+                0, 9, 13,
+                8, 14, 18,
+                0, 13, 14,
+                0, 8, 14,
+                0, 8, 14,
 
 
+        };
+        indexBuffer = shader.createIndexBuffer(indices);
+        indexCount = indices.length;
+
+        float[] colors = new float[vertices.length/2 * 3];
+        Random r = new Random();
+        for(int i = 0; i < colors.length; i++){
+            colors[i] = r.nextFloat();
+        }
+
+        colorBuffer = shader.createBuffer(colors, gl.GL_FLOAT_VEC3);
+    }
+
+    @Override
+    public void dispose(GLAutoDrawable drawable) {
+
+    }
+
+    @Override
+    public void display(GLAutoDrawable drawable) {
+        GL4 gl = (GL4) GLContext.getCurrentGL();
+        gl.glClear(GL.GL_COLOR_BUFFER_BIT);
+        shader.enable();
+        shader.setAttribute("a_position", vertexBuffer);
+        shader.setAttribute("a_color", colorBuffer);
+
+        float[] topColor = {0.6f, 0.8f, 1f};
+        float[] bottomColor = {0.1f, 0.22f, 0.5f};
+       // shader.setUniform("u_topColor", topColor);
+        //shader.setUniform("u_bottomColor", bottomColor);
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.glDrawElements(gl.GL_TRIANGLES, indexCount, gl.GL_UNSIGNED_INT, indexBuffer);
+        Matrix3f M = new Matrix3f(1f, 0f, 0f,  0f, 1f, 0f,  0f, 0f, 1f);
+    }
+
+    @Override
+    public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
+
+    }
 }

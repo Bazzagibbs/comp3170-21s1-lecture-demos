@@ -1,9 +1,7 @@
 #version 410
-
-uniform vec3 u_colour;			// colour as a 3D vector (r,g,b)
-
-layout(location = 0) out vec4 o_colour;	// output to colour buffer (r,g,b,a)
-
-void main() {
-    o_colour = vec4(u_colour, 1);
+//uniform vec3 u_color;
+in vec3 v_color;
+layout(location=0) out vec4 o_color;
+void main(){
+    o_color = vec4(v_color, 1);
 }
